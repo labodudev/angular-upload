@@ -20,40 +20,35 @@ angularUpload.directive('ngUpload', function() {
 });
 
 var listLi = [];
+var listXHTTP = [];
 
 function addFiles(form, input) {
-  var xhttp = getXMLHttpRequest();
-
   for (var i = 0; i < input.files.length; i++) {
-    xhttp.open("POST", "/uploadFile", true);
     createLi(input.files[i].name);
+    listXHTTP[listLi.length - 1] = getXMLHttpRequest();
+    listXHTTP[listLi.length - 1].open("POST", "/uploadFile", true);
+
     var formData = new FormData(form);
     formData.append('afile', input.files[i]);
-    xhttp.setRequestHeader('Cache-Control','no-cache');
-    xhttp.send(formData);
     (function(elId) {
-      xhttp.upload.addEventListener("progress", function(e) {
+      listXHTTP[elId].upload.addEventListener("progress", function(e) {
         if (e.lengthComputable) {
           var percentComplete = Math.round(e.loaded / e.total * 100);
           listLi[elId].children[1].value = percentComplete;
         }
       }, false);
-    })(i);
+      listXHTTP[elId].onreadystatechange = function() {
+        if (listXHTTP[elId].readyState == 4 && (listXHTTP[elId].status == 200 || listXHTTP[elId].status == 0)) {
+          listLi[elId].children[1].value = 100;
+          listLi[elId].children[2].innerHTML = "Done";
+        }
+        else if(listXHTTP[elId].readyState == 4 && (listXHTTP[elId].status == 413)) {
+          listLi[elId].children[2].innerHTML = "Error";
+        }
+      };
+    })(listLi.length - 1);
+    listXHTTP[listLi.length - 1].send(formData);
   }
-
-  // xhttp.onreadystatechange = function() {
-  //   if (xhttp.readyState == 4 && (xhttp.status == 200 || xhttp.status == 0)) {
-  //     console.log(xhttp.responseText);
-  //     // listLi[elId].children[2].innerHTML = "Done";
-  //   }
-  //   else if(xhttp.readyState == 4 && (xhttp.status == 413)) {
-  //     // listLi[elId].children[2].innerHTML = "Error";
-  //   }
-  // };
-
-
-
-
 }
 
 function createLi(name) {

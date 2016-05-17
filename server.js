@@ -61,42 +61,39 @@ server.on('request', function(req, res) {
   var body = '';
   var gotData = function(d) {
       size += d.length; // add this chunk's size to the total number of bytes received thus far
-      if (size > 20971520) {
-          req.removeListener('data', gotData); // we need to remove the event listeners so that we don't end up here more than once
-          req.removeListener('end', reqEnd);
-          res.writeHead(413, {'Content-Type': 'application/json'});
-          res.end(JSON.stringify({"size": "Upload too large"}));
-      }
+      // if (size > 20971520) {
+          // req.removeListener('data', gotData); // we need to remove the event listeners so that we don't end up here more than once
+          // req.removeListener('end', reqEnd);
+          // res.writeHead(413, {'Content-Type': 'application/json'});
+          // res.end(JSON.stringify({"size": "Upload too large"}));
+      // }
       body += d;
   };
 
   var reqEnd = function() {
     if (body.length > 0) {
       var note = body.split('\r\n');
-      var files = [];
-      var filesSplitted = body.split(note[0]);
+      var contentDeletedBoundary = body.split(note[0]);
+      var content = contentDeletedBoundary[1].split('\r\n');
+      content.shift();
+      content.shift();
+      content.shift();
+      content.shift();
+      content = content.join('\r\n');
+      var fileName = "undefined";
+      if (note[1].indexOf("filename=") != -1){
+        fileName = note[1].substring(note[1].indexOf("filename=") + 10, note[1].length - 1);
 
-      filesSplitted.shift();
-      for (var key in filesSplitted) {
-         var fileExploded = filesSplitted[key].split('\r\n');
-         var filename = "undefined";
-         if (fileExploded[1].indexOf("filename=") != -1){
-            fileName = fileExploded[1].substring(fileExploded[1].indexOf("filename=") + 10, fileExploded[1].length - 1);
-
-            if (fileName.indexOf('\\') != -1)
-              fileName = fileName.substring(fileName.lastIndexOf('\\')+1);
-          }
-
-         if (fileExploded[4]) {
-
-            fs.writeFile('./' + fileName, fileExploded[4], 'binary', function(err)
-            {
-                //forward to another location after writing data
-              res.writeHead(200, {'Content-Type': 'application/json'});
-              res.end(JSON.stringify({ "fileName": fileName }));
-            });
-         }
+        if (fileName.indexOf('\\') != -1)
+          fileName = fileName.substring(fileName.lastIndexOf('\\')+1);
       }
+
+      fs.writeFile('./uploads/' + fileName, content, 'binary', function(err)
+      {
+          //forward to another location after writing data
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ "fileName": fileName }));
+      });
     }
   };
 
