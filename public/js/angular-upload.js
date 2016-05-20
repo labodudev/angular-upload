@@ -7,7 +7,7 @@ var angularUpload = angular.module('app', []);
 angularUpload.directive('ngUpload', function() {
   return {
     restrict: 'E',
-    templateUrl: './public/html/uploadForm.html',
+    templateUrl: 'uploadForm.html',
     link: function(scope, element, attrs) {
       var form = element[0].children[0].children[0];
       var input = form.children[0];
