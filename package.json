@@ -1,11 +1,11 @@
 {
   "name": "angular-upload",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "An angular upload with NodeJS",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "Jimmy Latour <lelabodudev@gmail.com>",
-  "license": "MIT",
+  "license": "MIT"
 }

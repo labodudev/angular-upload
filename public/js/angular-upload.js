@@ -11,22 +11,29 @@ angularUpload.directive('ngUpload', function() {
     link: function(scope, element, attrs) {
       var form = element[0].children[0].children[0];
       var input = form.children[0];
+      scope.lists = [];
+
       input.addEventListener("change", function (e) {
-        addFiles(form, input);
+        addFiles(scope, form, input);
+        scope.$apply();
       });
 
     }
   };
 });
 
-var listLi = [];
 var listXHTTP = [];
 
-function addFiles(form, input) {
+function addFiles(scope, form, input) {
   for (var i = 0; i < input.files.length; i++) {
-    createLi(input.files[i].name);
-    listXHTTP[listLi.length - 1] = getXMLHttpRequest();
-    listXHTTP[listLi.length - 1].open("POST", "/uploadFile", true);
+    var li = {
+      "name": input.files[i].name,
+      "value": 0,
+      "status": "In progress..."
+    };
+    scope.lists.push(li);
+    listXHTTP.push( getXMLHttpRequest() );
+    listXHTTP[listXHTTP.length - 1].open("POST", "/uploadFile", true);
 
     var formData = new FormData(form);
     formData.append('afile', input.files[i]);
@@ -34,26 +41,23 @@ function addFiles(form, input) {
       listXHTTP[elId].upload.addEventListener("progress", function(e) {
         if (e.lengthComputable) {
           var percentComplete = Math.round(e.loaded / e.total * 100);
-          listLi[elId].children[1].value = percentComplete;
+          console.log( e.loaded );
+          scope.lists[elId].value = percentComplete;
+          scope.$apply();
         }
       }, false);
       listXHTTP[elId].onreadystatechange = function() {
         if (listXHTTP[elId].readyState == 4 && (listXHTTP[elId].status == 200 || listXHTTP[elId].status == 0)) {
-          listLi[elId].children[1].value = 100;
-          listLi[elId].children[2].innerHTML = "Done";
+          scope.lists[elId].value = 100;
+          scope.lists[elId].status = "Done!";
+          scope.$apply();
         }
         else if(listXHTTP[elId].readyState == 4 && (listXHTTP[elId].status == 413)) {
-          listLi[elId].children[2].innerHTML = "Error";
+          scope.lists[elId].status = "Error!";
+          scope.$apply();
         }
       };
-    })(listLi.length - 1);
-    listXHTTP[listLi.length - 1].send(formData);
+    })(listXHTTP.length - 1);
+    listXHTTP[listXHTTP.length - 1].send(formData);
   }
-}
-
-function createLi(name) {
-  var li = document.createElement("li");
-  li.innerHTML = "<span>" + name + "</span><progress max='100'></progress><span class='status'>In progress...</span>";
-  document.getElementById("list-file").appendChild(li);
-  listLi.push(li);
 }
